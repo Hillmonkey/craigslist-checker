@@ -8,22 +8,43 @@ import smtplib
 import config
 
 # Craigslist search URL
-BASE_URL = ('http://chicago.craigslist.org/search/'
+BASE_URL = ('https://chicago.craigslist.org/search/'
             '?sort=rel&areaID=11&subAreaID=&query={0}&catAbb=sss')
+# BASE_URL = ('https://chicago.craigslist.org/search/ccc?query=dog%20labrador&sort=rel')
+# BASE_URL = ("https://sfbay.craigslist.org/i/motorcycles")
+# BASE_URL = ("http://sfbay.craigslist.org/search/mcy?auto_make_model=suzuki+drz")
 
 def parse_results(search_term):
     results = []
     search_term = search_term.strip().replace(' ', '+')
     search_url = BASE_URL.format(search_term)
-    soup = BeautifulSoup(urlopen(search_url).read())
+    soup = BeautifulSoup(urlopen(search_url).read(), "lxml")
+    #==========================================================================
+    # TODO: learn more about BeautifulSoup(some_stuff)
+    print("==========")
+    print("len(soup) = " + str(len(soup)))
+    print("==========")
+    soup_list = soup.prettify()
+    soup_list = soup_list.splitlines()
+    for i in range(min(5,len(soup_list))):
+        print(soup_list[i])
+    # print(soup.prettify())
+     #==========================================================================
+    #row2s = soup.find_all('a', class_="result_title hdrlink")
+    row2s = soup.find_all('a')
+    for url in row2s:
+        print(">>>@ " + str(url.get('href')))
+    '''
     rows = soup.find('div', 'content').find_all('p', 'row')
     for row in rows:
         url = 'http://chicago.craigslist.org' + row.a['href']
+        # url = 'http://sfbay.craigslist.org' + row.a['href']
         # price = row.find('span', class_='price').get_text()
         create_date = row.find('time').get('datetime')
         title = row.find_all('a')[1].get_text()
         results.append({'url': url, 'create_date': create_date, 'title': title})
     return results
+    '''
 
 def write_results(results):
     """Writes list of dictionaries to file."""
@@ -34,21 +55,24 @@ def write_results(results):
         dw.writerows(results)
 
 def has_new_records(results):
-    current_posts = [x['url'] for x in results]
-    fields = results[0].keys()
-    if not os.path.exists('results.csv'):
-        return True
+    # DEBUG
+    # print (results)
+    if len(results) > 0:
+        current_posts = [x['url'] for x in results]
+        fields = results[0].keys()
+        if not os.path.exists('results.csv'):
+            return True
 
-    with open('results.csv', 'r') as f:
-        reader = csv.DictReader(f, fieldnames=fields, delimiter='|')
-        seen_posts = [row['url'] for row in reader]
+        with open('results.csv', 'r') as f:
+            reader = csv.DictReader(f, fieldnames=fields, delimiter='|')
+            seen_posts = [row['url'] for row in reader]
 
-    is_new = False
-    for post in current_posts:
-        if post in seen_posts:
-            pass
-        else:
-            is_new = True
+        is_new = False
+        for post in current_posts:
+            if post in seen_posts:
+                pass
+            else:
+                is_new = True
     return is_new
 
 def send_text(phone_number, msg):
@@ -77,9 +101,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     results = parse_results(TERM)
-    
+    print "type(results) = " + str(type(results))
+    if type(results) == NoneType:
+        exit
     # Send the SMS message if there are new results
-    if has_new_records(results):
+    elif has_new_records(results):
         message = "Hey - there are new Craigslist posts for: {0}".format(TERM.strip())
         print "[{0}] There are new results - sending text message to {0}".format(get_current_time(), PHONE_NUMBER)
         send_text(PHONE_NUMBER, message)
