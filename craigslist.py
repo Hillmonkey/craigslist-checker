@@ -6,6 +6,7 @@ import sys
 import os
 import smtplib
 import config
+import pprint
 
 # Craigslist search URL
 BASE_URL = ('https://chicago.craigslist.org/search/'
@@ -14,37 +15,32 @@ BASE_URL = ('https://chicago.craigslist.org/search/'
 # BASE_URL = ("https://sfbay.craigslist.org/i/motorcycles")
 # BASE_URL = ("http://sfbay.craigslist.org/search/mcy?auto_make_model=suzuki+drz")
 
+pp =pprint.PrettyPrinter(indent=4)
+
 def parse_results(search_term):
     results = []
     search_term = search_term.strip().replace(' ', '+')
     search_url = BASE_URL.format(search_term)
     soup = BeautifulSoup(urlopen(search_url).read(), "lxml")
-    #==========================================================================
-    # TODO: learn more about BeautifulSoup(some_stuff)
-    print("==========")
-    print("len(soup) = " + str(len(soup)))
-    print("==========")
-    soup_list = soup.prettify()
-    soup_list = soup_list.splitlines()
-    for i in range(min(5,len(soup_list))):
-        print(soup_list[i])
-    # print(soup.prettify())
-     #==========================================================================
-    #row2s = soup.find_all('a', class_="result_title hdrlink")
-    row2s = soup.find_all('a')
-    for url in row2s:
-        print(">>>@ " + str(url.get('href')))
-    '''
-    rows = soup.find('div', 'content').find_all('p', 'row')
+    rows = soup.find_all('a', class_="result-title hdrlnk")
+    
     for row in rows:
-        url = 'http://chicago.craigslist.org' + row.a['href']
-        # url = 'http://sfbay.craigslist.org' + row.a['href']
-        # price = row.find('span', class_='price').get_text()
-        create_date = row.find('time').get('datetime')
-        title = row.find_all('a')[1].get_text()
-        results.append({'url': url, 'create_date': create_date, 'title': title})
+        row_string = str(row)
+        extension = row_string[row_string.find("href=")+6: row_string.find(".html") + 5]
+        print extension.find("http")
+        if extension.find("http") != 0:
+            # tmp.append("http:chicago.craigslist.org" + extension)
+            url = 'http://chicago.craigslist.org' + extension
+            # url = 'http://sfbay.craigslist.org' + row.a['href']
+            # price = row.find('span', class_='price').get_text()
+            # create_date = row.find('time').get('datetime')
+            # title = row.find_all('a')[1].get_text()
+            # results.append({'url': url, 'create_date': create_date, 'title': title})
+            results.append({'url': url, 'title': "NO_TITLE"})
+    print("==========RESULTS==============")
+    pp.pprint(results)
+    print("+++++++++++END RESULTs++++++++++")
     return results
-    '''
 
 def write_results(results):
     """Writes list of dictionaries to file."""
@@ -102,7 +98,8 @@ if __name__ == '__main__':
 
     results = parse_results(TERM)
     print "type(results) = " + str(type(results))
-    if type(results) == NoneType:
+    if results is None:
+        print("106 ERROR--> exiting because results is type NoneType")
         exit
     # Send the SMS message if there are new results
     elif has_new_records(results):
