@@ -29,11 +29,12 @@ def parse_results(search_term):
         extension = row_string[row_string.find("href=")+6: row_string.find(".html") + 5]
         print extension.find("http")
         if extension.find("http") != 0:
-            # tmp.append("http:chicago.craigslist.org" + extension)
             url = 'http://chicago.craigslist.org' + extension
             # url = 'http://sfbay.craigslist.org' + row.a['href']
             # price = row.find('span', class_='price').get_text()
+            # TODO: figure out how to navigate from row to child of previous ...
             # create_date = row.find('time').get('datetime')
+            # TODO: (lower priority): grab the effing title!!!
             # title = row.find_all('a')[1].get_text()
             # results.append({'url': url, 'create_date': create_date, 'title': title})
             results.append({'url': url, 'title': "NO_TITLE"})
